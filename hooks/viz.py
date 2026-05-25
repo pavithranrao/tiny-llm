@@ -3,20 +3,8 @@ import re
 from pathlib import Path
 
 
-def _extract_body(html: str) -> str:
-    """Strip document wrapper — extract only <style>, <script>, and <body> content."""
-    # Collect <style> blocks from <head>
-    styles = re.findall(r'<style[^>]*>.*?</style>', html, re.DOTALL)
-    # Collect <script> blocks
-    scripts = re.findall(r'<script[^>]*>.*?</script>', html, re.DOTALL)
-    # Extract <body> inner content
-    body_match = re.search(r'<body[^>]*>(.*)</body>', html, re.DOTALL)
-    body_content = body_match.group(1) if body_match else html
-    return "\n".join(styles + [body_content] + scripts)
-
-
 def on_page_markdown(markdown, *, page, config, **kwargs):
-    """Replace {{ viz:path/to/file.html }} placeholders with raw HTML content."""
+    """Replace {{ viz:path/to/file.html }} with the full HTML file content."""
     project_dir = Path(config["config_file_path"]).parent
     docs_dir = Path(config["docs_dir"])
 
@@ -27,36 +15,43 @@ def on_page_markdown(markdown, *, page, config, **kwargs):
             source = docs_dir / rel_path
         if not source.exists():
             return f"<!-- MISSING: {rel_path} -->"
-        return _extract_body(source.read_text())
+        return source.read_text()
 
     return re.sub(r'\{\{\s*viz:\s*(.+?)\s*\}\}', replace, markdown)
 
 
 def on_post_page(output, *, page, config, **kwargs):
-    """Move all <style> and <script> from body content into <head>."""
+    """Fix injected HTML: strip document wrapper, move styles to head, keep scripts in body."""
     head_close = output.find("</head>")
-    if head_close == -1:
+    body_close = output.rfind("</body>")
+    if head_close == -1 or body_close == -1:
         return output
 
-    # Collect <style> blocks from the article content
+    body = output[head_close:body_close]
+
+    # 1) Remove any nested <!DOCTYPE>, <html>, <head>, </head>, <body>, </body> tags
+    body = re.sub(r'<!DOCTYPE[^>]*>', '', body, flags=re.IGNORECASE)
+    body = re.sub(r'<html[^>]*>', '', body, flags=re.IGNORECASE)
+    body = re.sub(r'</html>', '', body, flags=re.IGNORECASE)
+    body = re.sub(r'<head[^>]*>', '', body, flags=re.IGNORECASE)
+    body = re.sub(r'</head>', '', body, flags=re.IGNORECASE)
+    body = re.sub(r'<body[^>]*>', '', body, flags=re.IGNORECASE)
+    body = re.sub(r'</body>', '', body, flags=re.IGNORECASE)
+    # Remove <title> from nested doc
+    body = re.sub(r'<title>[^<]*</title>', '', body, flags=re.IGNORECASE)
+    # Remove charset/viewport meta tags from nested doc
+    body = re.sub(r'<meta[^>]*charset[^>]*>', '', body, flags=re.IGNORECASE)
+    body = re.sub(r'<meta[^>]*viewport[^>]*>', '', body, flags=re.IGNORECASE)
+
+    # 2) Extract <style> blocks → inject into <head>
     styles = []
     def extract_style(m):
         styles.append(m.group(0))
         return ""
+    body = re.sub(r'<style[^>]*>.*?</style>', extract_style, body, flags=re.DOTALL)
 
-    body_content = output[head_close:]
-    body_content = re.sub(r"<style[^>]*>.*?</style>", extract_style, body_content, flags=re.DOTALL)
-
-    # Collect <script> blocks from the article content (except mkdocs/theme scripts)
-    scripts = []
-    def extract_script(m):
-        scripts.append(m.group(0))
-        return ""
-
-    body_content = re.sub(r"<script[^>]*>.*?</script>", extract_script, body_content, flags=re.DOTALL)
-
-    if not styles and not scripts:
+    if not styles:
         return output
 
-    inject = "\n".join(styles + scripts)
-    return output[:head_close] + inject + "\n</head>" + body_content
+    style_inject = "\n".join(styles)
+    return output[:head_close] + style_inject + "\n</head>" + body + output[body_close:]
