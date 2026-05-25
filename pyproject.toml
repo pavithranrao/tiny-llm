@@ -20,10 +20,15 @@ dependencies = [
     "setuptools>=62",
     "nanobind==2.4.0",
     "pytest-benchmark>=5.1.0",
+    "nbformat>=5.10.4",
+    "ipywidgets>=8.1.8",
+    "nbconvert>=7.17.1",
+    "ipykernel>=7.2.0",
+    "matplotlib>=3.10.9",
+    "plotly>=6.7.0",
+    "marimo>=0.23.8",
 ]
 
-[project.optional-dependencies]
-viz = ["reflex>=0.7.0"]
 
 [tool.pdm.scripts]
 pre_run = { shell = "pdm sync --no-self > /dev/null" }

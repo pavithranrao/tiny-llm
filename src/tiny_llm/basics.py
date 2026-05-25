@@ -1,6 +1,4 @@
 import torch
-import torch.nn.functional as F
-import math
 
 
 def softmax(x: torch.Tensor, axis: int) -> torch.Tensor:

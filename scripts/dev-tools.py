@@ -15,7 +15,7 @@ def copy_test(args, skip_if_exists=False, force=False):
                 f"[WARNING] {target_file} already exists and is different from {source_file}"
             )
             print(
-                f"You can run `pdm run copy-test --week {args.week} --day {args.day} --force` to update it"
+                f"You can run `uv run python scripts/dev-tools.py copy-test --week {args.week} --day {args.day} --force` to update it"
             )
         return
     print(f"copying {source_file} to {target_file}")

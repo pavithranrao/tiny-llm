@@ -1,7 +1,8 @@
 import math
+
 import torch
-import torch.nn.functional as F
-from .basics import softmax, linear
+
+from src.tiny_llm.basics import linear, softmax
 
 
 def scaled_dot_product_attention_simple(

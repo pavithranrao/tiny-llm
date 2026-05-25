@@ -1,20 +1,19 @@
-import mlx.core as mx
 import torch
 
-with mx.stream(mx.cpu):
-    a = mx.array([1, 2, 3])
-    b = mx.array([4, 5, 6])
-    c = mx.add(a, b)
-    print(c)
+# CPU check
+print("CPU check:")
+a = torch.tensor([1, 2, 3], device="cpu")
+b = torch.tensor([4, 5, 6], device="cpu")
+c = torch.add(a, b)
+print(f"  cpu: {c}")
 
-with mx.stream(mx.gpu):
-    a = mx.array([1, 2, 3])
-    b = mx.array([4, 5, 6])
-    c = mx.add(a, b)
-    print(c)
-
-print(
-    torch.add(
-        torch.tensor([1, 2, 3], device="cpu"), torch.tensor([4, 5, 6], device="cpu")
-    )
-)
+# GPU check
+if torch.cuda.is_available():
+    print("GPU check:")
+    a = torch.tensor([1, 2, 3], device="cuda")
+    b = torch.tensor([4, 5, 6], device="cuda")
+    c = torch.add(a, b)
+    print(f"  gpu: {c}")
+    print(f"  device: {torch.cuda.get_device_name(0)}")
+else:
+    print("WARNING: CUDA not available")
