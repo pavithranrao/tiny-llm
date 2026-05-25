@@ -11,6 +11,7 @@ on:
 jobs:
   test-refsol:
     name: Test reference solution
+    if: github.repository == 'skyzh/tiny-llm'
     runs-on: macos-15 # ARM64
     steps:
       - uses: actions/checkout@v5

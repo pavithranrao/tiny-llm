@@ -3,22 +3,31 @@ import re
 from pathlib import Path
 
 
+def _extract_body(html: str) -> str:
+    """Strip document wrapper — extract only <style>, <script>, and <body> content."""
+    # Collect <style> blocks from <head>
+    styles = re.findall(r'<style[^>]*>.*?</style>', html, re.DOTALL)
+    # Collect <script> blocks
+    scripts = re.findall(r'<script[^>]*>.*?</script>', html, re.DOTALL)
+    # Extract <body> inner content
+    body_match = re.search(r'<body[^>]*>(.*)</body>', html, re.DOTALL)
+    body_content = body_match.group(1) if body_match else html
+    return "\n".join(styles + [body_content] + scripts)
+
+
 def on_page_markdown(markdown, *, page, config, **kwargs):
     """Replace {{ viz:path/to/file.html }} placeholders with raw HTML content."""
-    docs_dir = Path(config["docs_dir"])
     project_dir = Path(config["config_file_path"]).parent
+    docs_dir = Path(config["docs_dir"])
 
     def replace(match):
         rel_path = match.group(1)
-        # Resolve relative to project root (for viz/ files)
         source = project_dir / rel_path
-        if source.exists():
-            return source.read_text()
-        # Fallback: resolve relative to docs/
-        source = docs_dir / rel_path
-        if source.exists():
-            return source.read_text()
-        return f"<!-- MISSING: {rel_path} -->"
+        if not source.exists():
+            source = docs_dir / rel_path
+        if not source.exists():
+            return f"<!-- MISSING: {rel_path} -->"
+        return _extract_body(source.read_text())
 
     return re.sub(r'\{\{\s*viz:\s*(.+?)\s*\}\}', replace, markdown)
 
