@@ -26,10 +26,6 @@ jobs:
       - name: Install MkDocs Material
         run: pip install mkdocs-material pymdown-extensions
 
-      - name: Copy viz files into docs
-        run: |
-          cp viz/mha-viz/mha_d3_viz.html docs/mha_d3_viz.html
-
       - name: Build site
         run: mkdocs build
 

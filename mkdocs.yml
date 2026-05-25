@@ -34,9 +34,8 @@ nav:
   - Visualizations:
     - Multi-Head Attention: mha.md
 
-markdown_extensions:
-  - pymdownx.snippets:
-      check_paths: true
+hooks:
+  - hooks/viz.py
 
 plugins:
   - privacy:
