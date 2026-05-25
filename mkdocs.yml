@@ -1,0 +1,48 @@
+site_name: Tiny LLM
+site_url: https://pavithranrao.github.io/tiny-llm/
+site_description: Visual explorations of LLM internals
+repo_url: https://github.com/pavithranrao/tiny-llm
+repo_name: pavithranrao/tiny-llm
+
+theme:
+  name: material
+  palette:
+    - scheme: slate
+      primary: deep purple
+      accent: purple
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+    - scheme: default
+      primary: deep purple
+      accent: purple
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+  font:
+    text: Inter
+    code: JetBrains Mono
+  features:
+    - navigation.instant
+    - navigation.tracking
+    - navigation.tabs
+    - navigation.sections
+    - content.code.copy
+
+nav:
+  - Home: index.md
+  - Visualizations:
+    - Multi-Head Attention: mha.md
+
+markdown_extensions:
+  - pymdownx.snippets:
+      check_paths: true
+
+plugins:
+  - privacy:
+      assets: false
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/pavithranrao/tiny-llm
