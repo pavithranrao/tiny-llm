@@ -90,8 +90,16 @@ class SimpleMultiHeadAttention:
         return X.transpose(-3, -2)
 
 
-def causal_mask(L: int, S: int, dtype: torch.dtype) -> torch.Tensor:
-    pass
+def causal_mask(
+    L: int,
+    S: int,
+    dtype: torch.dtype,
+) -> torch.Tensor:
+    rows = torch.arange(L, dtype=dtype).reshape(L, 1)
+    cols = torch.arange(S, dtype=dtype).reshape(1, S)
+    mask = cols > rows + (S - L)
+    mask = torch.where(mask, float("-inf"), 0.0)
+    return mask.to(dtype=dtype)
 
 
 def scaled_dot_product_attention_grouped(
@@ -101,7 +109,30 @@ def scaled_dot_product_attention_grouped(
     scale: float | None = None,
     mask: torch.Tensor | str | None = None,
 ) -> torch.Tensor:
-    pass
+    original_shape = query.shape
+    H_q, L, D = query.shape[-3:]
+    H, S, _ = key.shape[-3:]
+    n_repeats = H_q // H
+
+    query = query.reshape(-1, H, n_repeats, L, D)
+    key = key.reshape(-1, H, 1, S, D)
+    value = value.reshape(-1, H, 1, S, D)
+
+    if mask == "causal":
+        mask = causal_mask(L, S, query.dtype).to(query.device)
+    elif isinstance(mask, torch.Tensor):
+        mask = mask.reshape(-1, H, n_repeats, L, S)
+
+    assert (mask is None) or isinstance(mask, torch.Tensor)
+
+    outputs = scaled_dot_product_attention_simple(
+        query=query,
+        key=key,
+        value=value,
+        scale=scale,
+        mask=mask,
+    )
+    return outputs.reshape(original_shape)
 
 
 def flash_attention(
